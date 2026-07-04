@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Cirque Mathématique</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+  }
+  #stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+  #main-image {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    /* debug: décommenter la ligne suivante pour visualiser les zones */
+    /* background: rgba(255,0,0,0.3); */
+  }
+  .hotspot:hover {
+    background: rgba(255, 255, 255, 0.12);
+    outline: 2px solid rgba(255,255,255,0.5);
+  }
+
+  #overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.92);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #overlay.active {
+    display: flex;
+  }
+  #overlay-content {
+    max-width: 92vw;
+    max-height: 92vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #overlay-content img,
+  #overlay-content video {
+    max-width: 92vw;
+    max-height: 92vh;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  }
+  #overlay-content iframe {
+    width: 90vw;
+    height: 90vh;
+    border: none;
+    background: #fff;
+  }
+  #close-btn {
+    position: fixed;
+    top: 20px;
+    right: 30px;
+    font-size: 40px;
+    color: #fff;
+    cursor: pointer;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    text-shadow: 0 0 8px #000;
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <img id="main-image" src="cirque.png" alt="Cirque Mathématique">
+  <!-- Les hotspots sont positionnés dynamiquement en JS -->
+</div>
+
+<div id="overlay">
+  <span id="close-btn">&times;</span>
+  <div id="overlay-content"></div>
+</div>
+
+<script>
+  // Dimensions naturelles de l'image
+  const NATURAL_W = 1448;
+  const NATURAL_H = 1086;
+
+  // Définition des zones cliquables : [x, y, largeur, hauteur] en pixels de l'image originale
+  const hotspots = [
+    { box: [480, 780, 200, 260], action: () => showVideo("crise d'oeuf.mp4") },        // oeuf rouge
+    { box: [0, 555, 590, 275],   action: () => showPage("boutons.html") },             // bureau avec boutons
+    { box: [690, 370, 270, 420], action: () => showVideo("insérage.mp4") },            // saucisse
+    { box: [55, 890, 215, 170],  action: () => showImage("tutoriel.png") },            // Tutoriel de Pêche
+    { box: [265, 875, 205, 185], action: () => showImage("manuel.png") },              // Manuel du cirque
+    { box: [950, 180, 498, 390], action: () => showPage("jeu.html") },                 // ordinateur
+    { box: [1080, 760, 368, 260], action: () => showRandomPhoto() },                   // classeur Pokémon
+  ];
+
+  const stage = document.getElementById('stage');
+  const img = document.getElementById('main-image');
+
+  function layoutHotspots() {
+    // Supprime les anciens hotspots
+    document.querySelectorAll('.hotspot').forEach(el => el.remove());
+
+    // Calcule le rectangle réellement affiché de l'image (object-fit: contain)
+    const stageRect = stage.getBoundingClientRect();
+    const stageRatio = stageRect.width / stageRect.height;
+    const imgRatio = NATURAL_W / NATURAL_H;
+
+    let renderW, renderH, offsetX, offsetY;
+    if (imgRatio > stageRatio) {
+      // image limitée par la largeur
+      renderW = stageRect.width;
+      renderH = renderW / imgRatio;
+      offsetX = 0;
+      offsetY = (stageRect.height - renderH) / 2;
+    } else {
+      // image limitée par la hauteur
+      renderH = stageRect.height;
+      renderW = renderH * imgRatio;
+      offsetY = 0;
+      offsetX = (stageRect.width - renderW) / 2;
+    }
+
+    const scale = renderW / NATURAL_W;
+
+    hotspots.forEach(h => {
+      const [x, y, w, hgt] = h.box;
+      const div = document.createElement('div');
+      div.className = 'hotspot';
+      div.style.left = (offsetX + x * scale) + 'px';
+      div.style.top = (offsetY + y * scale) + 'px';
+      div.style.width = (w * scale) + 'px';
+      div.style.height = (hgt * scale) + 'px';
+      div.addEventListener('click', h.action);
+      stage.appendChild(div);
+    });
+  }
+
+  window.addEventListener('resize', layoutHotspots);
+  img.addEventListener('load', layoutHotspots);
+  if (img.complete) layoutHotspots();
+
+  // Gestion de l'overlay
+  const overlay = document.getElementById('overlay');
+  const overlayContent = document.getElementById('overlay-content');
+  const closeBtn = document.getElementById('close-btn');
+
+  function openOverlay() {
+    overlay.classList.add('active');
+  }
+
+  function closeOverlay() {
+    overlay.classList.remove('active');
+    overlayContent.innerHTML = '';
+  }
+
+  function showVideo(src) {
+    overlayContent.innerHTML = `<video src="${src}" controls autoplay></video>`;
+    openOverlay();
+  }
+
+  function showImage(src) {
+    overlayContent.innerHTML = `<img src="${src}" alt="">`;
+    openOverlay();
+  }
+
+  function showPage(src) {
+    overlayContent.innerHTML = `<iframe src="${src}"></iframe>`;
+    openOverlay();
+  }
+
+  // Affiche une photo aléatoire du sous-dossier "photos"
+  // -> Les fichiers doivent être nommés photo1.jpg, photo2.jpg, photo3.jpg, ... (jusqu'à PHOTO_COUNT)
+  // -> Modifie simplement PHOTO_COUNT selon le nombre de photos que tu as mises dans le dossier
+  const PHOTO_COUNT = 20;
+  const PHOTO_EXT = "jpg"; // change en "png" si tes photos sont en .png
+
+  function showRandomPhoto() {
+    const n = Math.floor(Math.random() * PHOTO_COUNT) + 1;
+    const src = `photos/photo${n}.${PHOTO_EXT}`;
+    overlayContent.innerHTML = `<img src="${src}" alt="">`;
+    openOverlay();
+  }
+
+  closeBtn.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeOverlay();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeOverlay();
+  });
+</script>
+
+</body>
+</html>
