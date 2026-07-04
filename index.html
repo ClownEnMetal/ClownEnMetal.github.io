@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutons</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    height:100%;
+    background:#0a0a0a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .stage {
+    position:relative;
+    width:100%;
+    max-width:1448px;
+    overflow:hidden;
+  }
+  .stage img {
+    display:block;
+    width:100%;
+    height:auto;
+    user-select:none;
+    -webkit-user-drag:none;
+  }
+  .hotspot {
+    position:absolute;
+    border-radius:50%;
+    cursor:pointer;
+    background:transparent;
+    transform:translate(-50%,-50%);
+    transition:box-shadow .15s ease, filter .15s ease;
+  }
+  .hotspot:hover {
+    box-shadow:0 0 0 6px rgba(255,255,255,0.15);
+  }
+  .hotspot:active {
+    filter:brightness(0.85);
+  }
+
+  .overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.92);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+    z-index:1000;
+  }
+  .overlay.active {
+    opacity:1;
+    pointer-events:auto;
+  }
+  .overlay video {
+    max-width:90vw;
+    max-height:90vh;
+    box-shadow:0 0 60px rgba(0,0,0,0.6);
+    border-radius:4px;
+  }
+
+  .help-btn {
+    position:fixed;
+    top:20px;
+    right:20px;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    background:#2c2c2c;
+    color:#fff;
+    border:2px solid #555;
+    font-size:22px;
+    font-weight:bold;
+    font-family:Arial, sans-serif;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:900;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .help-btn:hover {
+    background:#444;
+    transform:scale(1.05);
+  }
+
+  .help-overlay {
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+    z-index:1100;
+  }
+  .help-overlay.active {
+    opacity:1;
+    pointer-events:auto;
+  }
+  .help-overlay img {
+    max-width:90vw;
+    max-height:90vh;
+    border-radius:6px;
+    box-shadow:0 0 60px rgba(0,0,0,0.6);
+  }
+
+  .stage .easter-egg {
+    position:absolute;
+    bottom:2%;
+    left:2%;
+    width:8%;
+    height:auto;
+    cursor:pointer;
+    z-index:900;
+    opacity:0.85;
+    transform-origin:bottom left;
+    transition:transform .2s ease, opacity .2s ease;
+  }
+  .stage .easter-egg:hover {
+    transform:scale(1.1);
+    opacity:1;
+  }
+</style>
+</head>
+<body>
+
+  <button class="help-btn" id="helpBtn" title="Aide">?</button>
+
+  <div class="stage">
+    <img src="buttons.png" alt="">
+
+    <img class="easter-egg" id="eggBtn" src="oeuf.png" alt="">
+
+    <!-- Coordonnées en % calculées à partir des centres réels des boutons dans l'image (1448x1086) -->
+    <div class="hotspot" data-video="videos/kiwi.mp4"
+         style="left:25.4%; top:28.5%; width:19.3%; height:25.8%;"></div>
+
+    <div class="hotspot" data-video="videos/banané.mp4"
+         style="left:50.6%; top:26.5%; width:19.3%; height:25.8%;"></div>
+
+    <div class="hotspot" data-video="videos/alarme.mp4"
+         style="left:74.9%; top:25.6%; width:19.3%; height:25.8%;"></div>
+
+    <div class="hotspot" data-video="videos/arc.mp4"
+         style="left:26.0%; top:56.2%; width:19.3%; height:25.8%;"></div>
+
+    <div class="hotspot" data-video="videos/pic.mp4"
+         style="left:51.1%; top:56.9%; width:19.3%; height:25.8%;"></div>
+
+    <div class="hotspot" data-video="videos/sel.mp4"
+         style="left:74.9%; top:56.4%; width:19.3%; height:25.8%;"></div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <video id="player" playsinline></video>
+  </div>
+
+  <div class="help-overlay" id="helpOverlay">
+    <img src="manuel.png" alt="Manuel">
+  </div>
+
+<script>
+  const overlay = document.getElementById('overlay');
+  const player = document.getElementById('player');
+  let closeTimeout = null;
+
+  function clearPendingClose() {
+    if (closeTimeout) {
+      clearTimeout(closeTimeout);
+      closeTimeout = null;
+    }
+  }
+
+  function playVideo(src) {
+    clearPendingClose();
+    player.pause();
+    player.src = src;
+    player.currentTime = 0;
+    overlay.classList.add('active');
+    player.play();
+  }
+
+  document.querySelectorAll('.hotspot').forEach(btn => {
+    btn.addEventListener('click', () => {
+      playVideo(btn.getAttribute('data-video'));
+    });
+  });
+
+  player.addEventListener('ended', () => {
+    // reste sur la dernière frame pendant 1 secondes avant de disparaître
+    closeTimeout = setTimeout(() => {
+      overlay.classList.remove('active');
+      player.removeAttribute('src');
+      player.load();
+      closeTimeout = null;
+    }, 1000);
+  });
+
+  // Cliquer en dehors de la vidéo l'arrête aussi (ferme immédiatement)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      clearPendingClose();
+      player.pause();
+      overlay.classList.remove('active');
+      player.removeAttribute('src');
+      player.load();
+    }
+  });
+
+  // Bouton Aide : affiche manuel.png
+  const helpBtn = document.getElementById('helpBtn');
+  const helpOverlay = document.getElementById('helpOverlay');
+
+  helpBtn.addEventListener('click', () => {
+    helpOverlay.classList.add('active');
+  });
+
+  helpOverlay.addEventListener('click', () => {
+    helpOverlay.classList.remove('active');
+  });
+
+  // Easter egg
+  const eggBtn = document.getElementById('eggBtn');
+  eggBtn.addEventListener('click', () => {
+    playVideo("videos/crise d'oeuf.mp4");
+  });
+</script>
+
+</body>
+</html>
