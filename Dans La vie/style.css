@@ -1,0 +1,19 @@
+      body {
+      background: url("fond.png");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      }
+
+.outro {
+  color: red;
+  font-weight: normal;
+  font-style: italic;
+  background-color: yellow;
+  }
+  footer {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  z-index: 2000;
+  }
