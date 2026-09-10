@@ -176,13 +176,13 @@ footer {
   });
 
   player.addEventListener('ended', () => {
-    // reste sur la dernière frame pendant 5 secondes avant de disparaître
+    // reste sur la dernière frame pendant 1 secondes avant de disparaître
     closeTimeout = setTimeout(() => {
       overlay.classList.remove('active');
       player.removeAttribute('src');
       player.load();
       closeTimeout = null;
-    }, 5000);
+    }, 1000);
   });
 
   // Cliquer en dehors de la vidéo l'arrête aussi (ferme immédiatement)
